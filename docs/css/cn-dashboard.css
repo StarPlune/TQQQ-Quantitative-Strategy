@@ -1,0 +1,39 @@
+#viewCn { font-size:16px; line-height:1.65; --cn-border:#dce4ec; --cn-muted:#64748b; }
+.cn-panel { background:white; border:1px solid var(--cn-border); border-radius:14px; padding:22px; margin-bottom:20px; }
+.cn-heading { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; flex-wrap:wrap; }
+.cn-title { font-size:24px; font-weight:700; letter-spacing:-.5px; margin:0 0 6px; }
+.cn-sub { color:var(--cn-muted); font-size:14px; margin:0; }
+.cn-pill { display:inline-block; padding:4px 10px; border-radius:20px; font-size:14px; background:#edf7f3; color:#047857; }
+.cn-controls { display:flex; flex-wrap:wrap; gap:12px; align-items:end; }
+.cn-controls label { display:grid; gap:5px; font-size:14px; color:#475569; }
+.cn-controls input { border:1px solid #cbd5e1; padding:8px 10px; border-radius:7px; min-width:135px; width:170px; color:#0f172a; background:white; font:inherit; }
+.cn-button { padding:8px 14px; border-radius:8px; border:1px solid #cbd5e1; background:white; color:#475569; font-size:14px; font-weight:600; cursor:pointer; }
+.cn-button:hover { background:#f1f5f9; }.cn-button[aria-pressed="true"],.cn-button.primary { background:#0f172a; color:white; border-color:#0f172a; }
+.cn-button:focus-visible,.cn-controls input:focus-visible { outline:3px solid #34d399; outline-offset:3px; }
+.cn-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:20px 0; }
+.cn-banner { background:#ecfdf5; border-color:#a7f3d0; }
+.cn-banner.warning { background:#fffbeb; border-color:#fcd34d; }
+.cn-status { font-size:21px; font-weight:700; color:#065f46; margin:8px 0; }
+.cn-warning { color:#92400e; font-size:14px; background:#fffbeb; padding:12px 16px; border-radius:8px; }
+.cn-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+.cn-two { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+.cn-grid .cn-panel,.cn-two .cn-panel { margin-bottom:0; }
+.cn-asset-name { font-size:16px; font-weight:700; margin:0 0 8px; }
+.cn-price { font:600 28px "JetBrains Mono",monospace; margin:8px 0; }
+.cn-tag { font-size:14px; font-weight:600; color:#047857; }.cn-tag.idle { color:#64748b; }
+.cn-positive { color:#dc2626; }.cn-negative { color:#059669; }
+.cn-rule-values { display:grid; grid-template-columns:1fr auto; gap:7px 14px; font-size:14px; margin-top:18px; border-top:1px solid #e2e8f0; padding-top:14px; }
+.cn-number { font-family:"JetBrains Mono",monospace; font-variant-numeric:tabular-nums; }
+.cn-budget-bar { height:18px; border-radius:8px; overflow:hidden; display:flex; margin:20px 0 16px; background:#e2e8f0; }
+.cn-budget-bar div { transition:width .2s; }.cn-red { background:#0d9488; }.cn-growth { background:#6366f1; }.cn-bond { background:#94a3b8; }
+.cn-budget-row { display:flex; justify-content:space-between; gap:14px; padding:10px 0; border-bottom:1px solid #edf2f7; font-size:15px; }
+.cn-dot { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:9px; }
+.cn-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin:20px 0; }
+.cn-kpi { background:#f8fafc; border:1px solid #e2e8f0; border-radius:9px; padding:16px; }.cn-kpi strong { display:block; margin-top:5px; font-size:23px; }
+.cn-table-wrap { overflow:auto; max-height:440px; }.cn-table { width:100%; border-collapse:collapse; white-space:nowrap; font-size:14px; text-align:left; }
+.cn-table th,.cn-table td { padding:12px 13px; border-bottom:1px solid #e2e8f0; }.cn-table th { background:#f8fafc; color:#64748b; position:sticky; top:0; font-weight:500; }
+.cn-chart { position:relative; height:310px; margin:14px 0; }.cn-chart.dd { height:200px; }
+.cn-rule { padding:15px 0; border-bottom:1px solid #e2e8f0; }.cn-rule h3 { margin:0 0 8px; font-weight:700; font-size:17px; }.cn-rule p { margin:5px 0; }
+.cn-error { color:#991b1b; background:#fef2f2; padding:16px; border-radius:9px; font-size:15px; }
+.cn-hidden { display:none !important; }
+@media(max-width:760px) { .cn-grid,.cn-two { grid-template-columns:1fr; }.cn-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }.cn-panel { padding:17px; }.cn-title { font-size:21px; }.cn-controls input { width:145px; }.cn-chart { height:250px; } }

@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>个人量化交易工作台 · TQQQ / QQQ / 短期美债轮动系统</title>
+<title>个人量化交易工作台 · 美股轮动 / A股双择时</title>
+<link rel="stylesheet" href="./css/cn-dashboard.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -38,20 +39,21 @@
         <div class="w-9 h-9 rounded-lg bg-slate-900 text-emerald-400 flex items-center justify-center font-mono-num font-bold text-sm">QT</div>
         <div>
           <h1 class="text-base sm:text-lg font-bold tracking-tight text-slate-900 leading-tight">个人量化交易工作台</h1>
-          <p class="text-xs text-slate-500">TQQQ / QQQ / 短期美债 (SGOV·BIL) · 1999–2026 真实日线引擎</p>
+          <p class="text-xs text-slate-500">美股ETF轮动 / A股红利低波＋创业板＋十年国债</p>
         </div>
       </div>
-      <nav class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg" aria-label="主导航">
+      <nav class="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-lg" aria-label="主导航">
         <button id="tabBtnCockpit" type="button" class="tab-btn active px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition">每日信号驾驶舱</button>
         <button id="tabBtnLab" type="button" class="tab-btn px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 transition">策略回测实验室</button>
         <button id="tabBtnLogs" type="button" class="tab-btn px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 transition">换仓日志与脚本</button>
+        <button id="tabBtnCn" type="button" class="tab-btn px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 transition">A股双择时 · 60∶40</button>
       </nav>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
     <!-- Global Active Strategy Bar -->
-    <section class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+    <section id="usStrategyBar" class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div class="flex items-center gap-2">
           <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">当前激活策略</span>
@@ -80,6 +82,8 @@
         </button>
       </div>
     </section>
+
+    <section id="viewCn" class="hidden" aria-label="A股红利创业板国债策略工作台"></section>
 
     <!-- TAB 1: LIVE SIGNAL COCKPIT -->
     <section id="viewCockpit" class="space-y-6">
@@ -383,7 +387,7 @@
       </div>
     </section>
 
-    <footer class="text-xs text-slate-400 pt-2 pb-6 flex flex-wrap justify-between gap-2">
+    <footer id="usFooter" class="text-xs text-slate-400 pt-2 pb-6 flex flex-wrap justify-between gap-2">
       <span>数据来源：Google Finance (QQQ 1999–2026 / TQQQ 2010–2026)、NYU Stern 3个月美债历史回报、BIL 历史总回报。1999–2010 TQQQ 按 3× QQQ 日涨跌合成。</span>
       <span>历史回测不构成投资建议</span>
     </footer>
@@ -1006,8 +1010,10 @@ function refreshAll() {
 
 function switchTab(t) {
   STATE.tab = t;
-  const map = { cockpit: "viewCockpit", lab: "viewLab", logs: "viewLogs" };
-  const btns = { cockpit: "tabBtnCockpit", lab: "tabBtnLab", logs: "tabBtnLogs" };
+  const map = { cockpit: "viewCockpit", lab: "viewLab", logs: "viewLogs", cn: "viewCn" };
+  const btns = { cockpit: "tabBtnCockpit", lab: "tabBtnLab", logs: "tabBtnLogs", cn: "tabBtnCn" };
+  document.getElementById("usStrategyBar").classList.toggle("hidden", t === "cn");
+  document.getElementById("usFooter").classList.toggle("hidden", t === "cn");
   Object.keys(map).forEach(k => {
     document.getElementById(map[k]).classList.toggle("hidden", k !== t);
     const b = document.getElementById(btns[k]);
@@ -1030,6 +1036,7 @@ function applyPreset(num) {
 document.getElementById("tabBtnCockpit").addEventListener("click", () => switchTab("cockpit"));
 document.getElementById("tabBtnLab").addEventListener("click", () => switchTab("lab"));
 document.getElementById("tabBtnLogs").addEventListener("click", () => switchTab("logs"));
+document.getElementById("tabBtnCn").addEventListener("click", () => switchTab("cn"));
 document.getElementById("btnGoAllLogs").addEventListener("click", () => switchTab("logs"));
 
 [1, 2, 3, 4].forEach(n => {
@@ -1187,7 +1194,7 @@ async function loadLiveJson() {
       if (live.tbillAnnual) DATA.tbillAnnual = Object.assign({}, DATA.tbillAnnual, live.tbillAnnual);
       initSimInputs();
       refreshAll();
-      showToast("已同步最新自动更新行情（" + DATA.dates[DATA.dates.length - 1] + "）");
+      if (STATE.tab !== "cn") showToast("已同步最新美股行情（" + DATA.dates[DATA.dates.length - 1] + "）");
     }
   } catch (e) {
     // Offline or local file:// mode: quietly keep embedded baseline data
@@ -1199,5 +1206,7 @@ initSimInputs();
 refreshAll();
 loadLiveJson();
 </script>
+<script src="./js/cn-strategy.js"></script>
+<script src="./js/cn-dashboard.js"></script>
 </body>
 </html>
