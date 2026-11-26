@@ -16,12 +16,6 @@
     <div id="cnError" class="cn-error cn-hidden" role="alert"></div>
     <div id="cnLoading" class="cn-panel cn-sub">正在校验行情、月线与历史状态…</div>
     <div id="cnContent" class="cn-hidden">
-      <nav class="cn-tabs" aria-label="A股策略视图">
-        <button class="cn-button" id="cnTabSignal" aria-pressed="true">信号总览</button>
-        <button class="cn-button" id="cnTabBacktest" aria-pressed="false">历史回测</button>
-        <button class="cn-button" id="cnTabLogs" aria-pressed="false">调仓记录</button>
-        <button class="cn-button" id="cnTabRules" aria-pressed="false">规则与口径</button>
-      </nav>
       <section id="cnSignalPanel">
         <div class="cn-panel cn-banner" id="cnBanner" aria-live="polite">
           <div class="cn-heading"><div><p class="cn-sub" id="cnScenarioLabel"></p><h3 class="cn-status" id="cnStatus"></h3><p id="cnReason"></p></div>
@@ -50,26 +44,25 @@
         </div>
       </section>
       <section id="cnLogsPanel" class="cn-hidden"><div class="cn-panel"><div class="cn-heading"><div><h3 class="cn-asset-name">历史信号变化</h3><p class="cn-sub">从2020年初空仓逐日推进；以下是信号日期，不是已成交的账户记录。</p></div><button id="cnExportLogs" class="cn-button">导出信号CSV</button></div><div class="cn-table-wrap" style="margin-top:16px"><table class="cn-table"><thead><tr><th>信号日</th><th>新触发事件</th><th>红利</th><th>创业板</th><th>国债</th><th>计划执行</th></tr></thead><tbody id="cnLogsBody"></tbody></table></div></div></section>
-      <section id="cnRulesPanel" class="cn-hidden"><div class="cn-panel">
+      <details class="cn-panel"><summary class="cn-rules-summary">策略规则与数据口径</summary>
         <h3 class="cn-asset-name">固定规则 · cn-60-40-v1</h3>
         <div class="cn-rule"><h3>红利低波512890 · 回归择时</h3><p>以前3、4、6个已结束月份的月末ETF收盘价计算M3/M4/M6，排除当月。B为三线中位数，H为最高值。</p><p>未持有且P＜0.97×B：启用60%预算；已持有且P＞1.06×H：退出，预算转国债。其余及等于门槛时沿用原状态。没有独立止损，持续下跌时可能一直持有。</p></div>
         <div class="cn-rule"><h3>创业板159915 · 趋势择时</h3><p>MA30为包含信号日收盘的最近30个有效报价交易日简单均线。未持有且P＞1.04×MA30：启用40%预算；已持有且P＜1.01×MA30：退出转国债。其余及等于门槛时保持。</p><p>使用ETF场内行情生成信号，不用创业板指数替代。</p></div>
         <div class="cn-rule"><h3>十年国债511260 · 预算承接</h3><p>国债没有独立择时规则，不替换成511520。股票预算独立，未启用部分转国债。任一股票信号改变时，下一交易日恢复全组合目标；没有变化时不每日再平衡。国债价格也会下跌。</p></div>
         <div class="cn-rule"><h3>历史延续与新启动</h3><p>历史延续从2020年首个交易日、两只股票均未持有开始逐日推进。今天全现金启动只检查今天的入场条件，不继承研究模型历史持仓。用户实际成交和账户持仓未知。</p></div>
         <div class="cn-rule"><h3>数据与成交口径</h3><p>原始场内收盘价来自新浪日线，并与腾讯盘后报价及昨收核对；分红拆分表来自东方财富。按历史事件逐日构建因果复权序列，门槛换算回当日原始报价单位。指标没有使用当月最终收盘或未来分红。</p><p>历史缺报日，该标的不生成新信号；回测仅按过去最近报价估值、不在缺报日成交，待全部报价有效才执行待调仓。回测为次日收盘总收益近似，绝不把同一收盘价确认并成交包装成可实现结果。</p><p>每天北京时间16:35由GitHub Actions尝试刷新。无新增确认交易日时保留原日期；数据失败保留上次快照，页面显示真实行情截止日，不冒充当天信号。自动任务可能延迟。</p><p id="cnSourceMeta" class="cn-sub"></p><a href="./data/cn_market_data.json" target="_blank" rel="noopener" style="color:#047857">查看公开行情与来源快照</a></div>
-      </div></section>
+      </details>
     </div>`;
 
   function showPanel(next) {
     panel = next;
-    for (const name of ['signal', 'backtest', 'logs', 'rules']) {
+    for (const name of ['signal', 'backtest', 'logs']) {
       const suffix = name[0].toUpperCase() + name.slice(1);
       $('cn' + suffix + 'Panel').classList.toggle('cn-hidden', next !== name);
-      $('cnTab' + suffix).setAttribute('aria-pressed', String(next === name));
     }
-    if (next === 'backtest' && data) runBacktest();
+    if (next === 'backtest' && result) runBacktest();
   }
-  for (const name of ['signal', 'backtest', 'logs', 'rules']) $('cnTab' + name[0].toUpperCase() + name.slice(1)).addEventListener('click', () => showPanel(name));
+  document.addEventListener('cn-panel', event => showPanel(event.detail));
   $('cnHistory').addEventListener('click', () => { scenario = 'history'; renderSignal(); });
   $('cnCold').addEventListener('click', () => { scenario = 'cold'; renderSignal(); });
   $('cnCapital').addEventListener('input', renderBudget);
@@ -150,8 +143,8 @@
       $('cnBtStart').max = data.quoteDate;
       $('cnSourceMeta').textContent = `行情截止：${data.quoteDate}；快照生成：${new Date(data.updatedAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}（北京时间）。原始来源地址与校验哈希随公开快照保存。`;
       renderSignal(); renderLogs(); $('cnLoading').classList.add('cn-hidden'); $('cnContent').classList.remove('cn-hidden');
+      if (panel === 'backtest' && !root.classList.contains('hidden')) runBacktest();
     } catch (e) { $('cnLoading').classList.add('cn-hidden'); $('cnDataDate').textContent = '行情待核实'; $('cnError').textContent = e.message + '。不生成确定买卖结论。'; $('cnError').classList.remove('cn-hidden'); }
   }
   load();
-  if (location.hash === '#cn' && typeof switchTab === 'function') switchTab('cn');
 })();

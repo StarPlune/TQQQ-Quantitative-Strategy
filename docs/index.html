@@ -46,13 +46,20 @@
         <button id="tabBtnCockpit" type="button" class="tab-btn active px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition">每日信号驾驶舱</button>
         <button id="tabBtnLab" type="button" class="tab-btn px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 transition">策略回测实验室</button>
         <button id="tabBtnLogs" type="button" class="tab-btn px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 transition">换仓日志与脚本</button>
-        <button id="tabBtnCn" type="button" class="tab-btn px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 transition">A股双择时 · 60∶40</button>
       </nav>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-    <!-- Global Active Strategy Bar -->
+    <section class="strategy-selector" aria-label="当前页面的策略选择">
+      <span id="strategyContext">每日信号驾驶舱</span>
+      <label for="strategySelect">策略</label>
+      <select id="strategySelect">
+        <option value="us">美股 ETF 轮动</option>
+        <option value="cn">A股双择时 · 红利低波＋创业板</option>
+      </select>
+    </section>
+    <!-- US strategy presets -->
     <section id="usStrategyBar" class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div class="flex items-center gap-2">
@@ -410,6 +417,7 @@ const DATA = {
 
 const STATE = {
   tab: "cockpit",
+  market: "us",
   preset: 1,
   mode: "ema_vol",
   emaFast: 5,
@@ -1004,24 +1012,46 @@ function refreshAll() {
   syncControlsFromState();
   lastResult = runEngine(STATE.simOverride);
   renderCockpit(lastResult);
-  if (STATE.tab === "lab") renderLab(lastResult);
+  if (STATE.tab === "lab" && STATE.market === "us") renderLab(lastResult);
   renderLogs(lastResult);
 }
 
-function switchTab(t) {
-  STATE.tab = t;
-  const map = { cockpit: "viewCockpit", lab: "viewLab", logs: "viewLogs", cn: "viewCn" };
-  const btns = { cockpit: "tabBtnCockpit", lab: "tabBtnLab", logs: "tabBtnLogs", cn: "tabBtnCn" };
-  document.getElementById("usStrategyBar").classList.toggle("hidden", t === "cn");
-  document.getElementById("usFooter").classList.toggle("hidden", t === "cn");
-  Object.keys(map).forEach(k => {
-    document.getElementById(map[k]).classList.toggle("hidden", k !== t);
-    const b = document.getElementById(btns[k]);
-    b.classList.toggle("active", k === t);
-    b.classList.toggle("text-slate-600", k !== t);
-  });
-  if (t === "lab" && lastResult) renderLab(lastResult);
+const workspaceTabs = {
+  cockpit: ["viewCockpit", "tabBtnCockpit", "signal"],
+  lab: ["viewLab", "tabBtnLab", "backtest"],
+  logs: ["viewLogs", "tabBtnLogs", "logs"]
+};
+
+function switchTab(tab, market = STATE.market, record = true) {
+  STATE.tab = tab;
+  STATE.market = market;
+  const isCn = market === "cn";
+  const [, activeButton, panel] = workspaceTabs[tab];
+  document.getElementById("strategySelect").value = market;
+  document.getElementById("strategyContext").textContent = document.getElementById(activeButton).textContent;
+  for (const id of ["usStrategyBar", "usFooter"]) document.getElementById(id).classList.toggle("hidden", isCn);
+  document.getElementById("viewCn").classList.toggle("hidden", !isCn);
+  for (const [key, [view, button]] of Object.entries(workspaceTabs)) {
+    const active = key === tab;
+    document.getElementById(view).classList.toggle("hidden", !active || isCn);
+    const control = document.getElementById(button);
+    control.classList.toggle("active", active);
+    control.classList.toggle("text-slate-600", !active);
+    control.setAttribute("aria-pressed", String(active));
+  }
+  if (isCn) document.dispatchEvent(new CustomEvent("cn-panel", { detail: panel }));
+  else if (tab === "lab" && lastResult) renderLab(lastResult);
+  const hash = "#" + tab + "/" + market;
+  if (record && location.hash !== hash) history.pushState(null, "", hash);
 }
+
+function restoreWorkspace() {
+  const [tab, market] = location.hash.slice(1).split("/");
+  if (tab === "cn") switchTab("cockpit", "cn", false);
+  else switchTab(Object.hasOwn(workspaceTabs, tab) ? tab : "cockpit", market === "cn" ? "cn" : "us", false);
+}
+window.addEventListener("hashchange", restoreWorkspace);
+document.getElementById("strategySelect").addEventListener("change", e => switchTab(STATE.tab, e.target.value));
 
 function applyPreset(num) {
   STATE.preset = num;
@@ -1036,7 +1066,6 @@ function applyPreset(num) {
 document.getElementById("tabBtnCockpit").addEventListener("click", () => switchTab("cockpit"));
 document.getElementById("tabBtnLab").addEventListener("click", () => switchTab("lab"));
 document.getElementById("tabBtnLogs").addEventListener("click", () => switchTab("logs"));
-document.getElementById("tabBtnCn").addEventListener("click", () => switchTab("cn"));
 document.getElementById("btnGoAllLogs").addEventListener("click", () => switchTab("logs"));
 
 [1, 2, 3, 4].forEach(n => {
@@ -1194,7 +1223,7 @@ async function loadLiveJson() {
       if (live.tbillAnnual) DATA.tbillAnnual = Object.assign({}, DATA.tbillAnnual, live.tbillAnnual);
       initSimInputs();
       refreshAll();
-      if (STATE.tab !== "cn") showToast("已同步最新美股行情（" + DATA.dates[DATA.dates.length - 1] + "）");
+      if (STATE.market === "us") showToast("已同步最新美股行情（" + DATA.dates[DATA.dates.length - 1] + "）");
     }
   } catch (e) {
     // Offline or local file:// mode: quietly keep embedded baseline data
@@ -1208,5 +1237,6 @@ loadLiveJson();
 </script>
 <script src="./js/cn-strategy.js"></script>
 <script src="./js/cn-dashboard.js"></script>
+<script>restoreWorkspace();</script>
 </body>
 </html>
